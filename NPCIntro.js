@@ -14,7 +14,7 @@ var NPCIntro = NPCIntro || (function () {
 
     //---- INFO ----//
 
-    var version = '1.0',
+    var version = '1.1',
     debugMode = false,
     styles = {
         box:  'background-color: #fff; border: 1px solid #000; padding: 8px 10px; border-radius: 6px; margin-left: -40px; margin-right: 0px;',
@@ -50,6 +50,11 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
 					case 'show':
 						if (playerIsGM(msg.playerid)) {
 							commandIntro(msg);
+						}
+						break;
+					case 'desc':
+						if (playerIsGM(msg.playerid)) {
+							commandUpdateDesc(msg);
 						}
 						break;
                     case 'config':
@@ -121,6 +126,12 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
                 message += (desc != '' ? desc : '<p><i>No description found.</i></p>');
 
                 showDialog(npc.get('name'), message);
+
+                if (!desc) {
+                    message = 'No appearance field was found for ' + npc.get('name') + '. Would you like to create one?';
+                    message += '<div style=\'' + styles.buttonWrapper + '\'><a style=\'' + styles.button + '\' href="!intro desc ' + npc.get('id') + ' ?{Enter Description|}">Add Description</a></div>';
+                    showDialog('', message, 'GM');
+                }
             } else showDialog('Intro Error', 'Character was not an NPC.', 'GM');
         } else showDialog('Intro Error', 'You must have a valid token selected.', 'GM');
     },
@@ -130,6 +141,21 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
         if (char && char.get('controlledby') == '') {
             return char;
         } else return false;
+    },
+
+    commandUpdateDesc = function (msg) {
+        var message = '',
+        char_id = msg.content.split(/\s+/i)[2],
+        desc = msg.content.replace('!intro desc ' + char_id, '').trim();
+        var char = getObj('character', char_id);
+        if (char) {
+            var field = findObjs({ type: 'attribute', characterid: char_id, name: state['NPCIntro'].desc_field })[0];
+            if (!field) field = createObj("attribute", {characterid: char_id, name: state['NPCIntro'].desc_field, current: desc});
+            else field.set({current: desc});
+            message = 'The following description was added to ' + char.get('name') + ':<br>' + desc;
+            message += '<div style=\'' + styles.buttonWrapper + '\'><a style=\'' + styles.button + '\' href="!intro desc ' + char.get('id') + ' ?{Enter Description|' + desc + '}">Edit Description</a></div>';
+            showDialog('Description Updated', message, 'GM');
+        } else showDialog('Description Error', 'Character ID not valid.', 'GM');
     },
 
     commandConfig = function (msg) {
