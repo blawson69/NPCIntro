@@ -14,7 +14,7 @@ var NPCIntro = NPCIntro || (function () {
 
     //---- INFO ----//
 
-    var version = '1.1',
+    var version = '1.2',
     debugMode = false,
     styles = {
         box:  'background-color: #fff; border: 1px solid #000; padding: 8px 10px; border-radius: 6px; margin-left: -40px; margin-right: 0px;',
@@ -31,7 +31,7 @@ var NPCIntro = NPCIntro || (function () {
         if (typeof state['NPCIntro'].fallback_field == 'undefined') state['NPCIntro'].fallback_field = 'bio';
         if (typeof state['NPCIntro'].use_fallback == 'undefined') state['NPCIntro'].use_fallback = true;
         if (typeof state['NPCIntro'].show_details == 'undefined') state['NPCIntro'].show_details = true;
-state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appearance';
+
         log('--> NPCIntro v' + version + ' <-- Initialized');
 		if (debugMode) {
 			var d = new Date();
@@ -77,8 +77,10 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
         var token = getObj(msg.selected[0]._type, msg.selected[0]._id);
         if (token) {
             var npc = getNPCChar(token.get('represents'));
+            var anon = msg.content.search(/\-\-anon/i) != -1;
             if (npc) {
-                var url = '',  race = '', gender = '', height = '', weight = '', eyes = '', skin = '', hair = '', info_type = '';
+                var url = '',  race = '', gender = '', height = '', weight = '', eyes = '', skin = '', hair = '', size = '', type = '';
+
                 url = npc.get('avatar').split('?')[0];
                 race = getAttrByName(npc.get('id'), 'race') || '';
                 height = getAttrByName(npc.get('id'), 'height') || '';
@@ -86,27 +88,30 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
                 eyes = getAttrByName(npc.get('id'), 'eyes') || '';
                 skin = getAttrByName(npc.get('id'), 'skin') || '';
                 hair = getAttrByName(npc.get('id'), 'hair') || '';
+                size = getAttrByName(npc.get('id'), 'size') || '';
+                gender = getAttrByName(npc.get('id'), 'gender') || '';
                 if (isShapedSheet()) {
-                    gender = getAttrByName(npc.get('id'), 'gender') || '';
-                    var size = getAttrByName(npc.get('id'), 'size') || '';
-                    var type = getAttrByName(npc.get('id'), 'type') || '';
-                    if (!getAttrByName(npc.get('id'), 'gender')) info_type = initCap(size) + ' ' + type;
+                    type = getAttrByName(npc.get('id'), 'type') || '';
                 } else {
                     var npc_type = getAttrByName(npc.get('id'), 'npc_type') || '';
-                    info_type = npc_type.split(/,\s*/)[0];
+                    var tmp_type = npc_type.split(/,\s+/)[0];
+                    if (size == '') size = tmp_type.split(/\s+/)[0];
+                    type = _.reject(tmp_type.split(/\s+/), function (x) { return x.toLowerCase() == size.toLowerCase(); }).join(' ');
                 }
 
+                var header = isNPCSheet(npc.get('id')) ? 'Creature' : 'Individual';
                 message += '<i><img style="width: 250px;" width="250" src="' + url + '" alt="No avatar found!" /></i>';
-                if ((gender != '' || race != '' || height != '' || weight != '' || eyes != '' || skin != '' || hair != '' || info_type != ''|| info_type != '') && state['NPCIntro'].show_details) {
+                if ((gender != '' || race != '' || height != '' || weight != '' || eyes != '' || skin != '' || hair != '' || size != ''|| type != '') && state['NPCIntro'].show_details) {
                     message += '<div style="' + styles.details + '">';
-                    if (gender != '') message += '<b>Gender:</b> ' + gender + '<br>';
-                    if (race != '') message += '<b>Race:</b> ' + race + '<br>';
-                    if (height != '') message += '<b>Height:</b> ' + height + '<br>';
-                    if (weight != '') message += '<b>Weight:</b> ' + weight + '<br>';
-                    if (eyes != '') message += '<b>Eyes:</b> ' + eyes + '<br>';
-                    if (skin != '') message += '<b>Skin:</b> ' + skin + '<br>';
-                    if (hair != '') message += '<b>Hair:</b> ' + hair + '<br>';
-                    if (info_type != '') message += '<i>' + info_type + '</i><br>';
+                    if (size != '' && !isNPCSheet(npc.get('id')) && anon) message += '<b>Size:</b> ' + initCap(size) + '<br>';
+                    if (gender != '' && !anon) message += '<b>Gender:</b> ' + initCap(gender) + '<br>';
+                    if (race != '' && !anon) message += '<b>Race:</b> ' + initCap(race) + '<br>';
+                    if (height != '' && !anon) message += '<b>Height:</b> ' + height + '<br>';
+                    if (weight != '' && !anon) message += '<b>Weight:</b> ' + weight + '<br>';
+                    if (eyes != '') message += '<b>Eyes:</b> ' + initCap(eyes) + '<br>';
+                    if (skin != '') message += '<b>Skin:</b> ' + initCap(skin) + '<br>';
+                    if (hair != '') message += '<b>Hair:</b> ' + initCap(hair) + '<br>';
+                    if (isNPCSheet(npc.get('id'))) message += '<i>' + initCap(size) + ' ' + (anon ? header.toLowerCase() : type) + '</i><br>';
                     message += '</div>';
                 }
 
@@ -123,9 +128,9 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
                         desc = desc.replace(/\n/g, '<br>');
                     }
                 }
-                message += (desc != '' ? desc : '<p><i>No description found.</i></p>');
+                message += (desc != '' ? desc : '<p><i>No description available.</i></p>');
 
-                showDialog(npc.get('name'), message);
+                showDialog((anon ? 'Unknown ' + header : npc.get('name')), message);
 
                 if (!desc) {
                     message = 'No appearance field was found for ' + npc.get('name') + '. Would you like to create one?';
@@ -143,6 +148,10 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
         } else return false;
     },
 
+    isNPCSheet = function (char_id) {
+        return (isShapedSheet() ? getAttrByName(char_id, 'is_npc') == '1' : getAttrByName(char_id, 'npc') == '1');
+    },
+
     commandUpdateDesc = function (msg) {
         var message = '',
         char_id = msg.content.split(/\s+/i)[2],
@@ -151,7 +160,7 @@ state['NPCIntro'].desc_field = isShapedSheet() ? 'appearance' : 'character_appea
         if (char) {
             var field = findObjs({ type: 'attribute', characterid: char_id, name: state['NPCIntro'].desc_field })[0];
             if (!field) field = createObj("attribute", {characterid: char_id, name: state['NPCIntro'].desc_field, current: desc});
-            else field.set({current: desc});
+            field.set({current: desc});
             message = 'The following description was added to ' + char.get('name') + ':<br>' + desc;
             message += '<div style=\'' + styles.buttonWrapper + '\'><a style=\'' + styles.button + '\' href="!intro desc ' + char.get('id') + ' ?{Enter Description|' + desc + '}">Edit Description</a></div>';
             showDialog('Description Updated', message, 'GM');

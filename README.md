@@ -4,11 +4,17 @@ First impressions are everything! This [Roll20](http://roll20.net/) script pulls
 
 Use the following command with a token representing a character selected: `!intro show`
 
+If the character/creature has not been previously encountered, you can introduce them anonymously to players by adding `--anon` to the command. This will substitute the actual name with "Unknown Individual" or "Unknown Creature" and reduce the appearance details as well. The full command would be: `!intro show --anon`
+
 ### What is shows
 NPCIntro displays the avatar along with information from the "Appearance" field of the 5e Shaped character sheet or the "Character Appearance" field on the OGL sheet. For monsters, you can choose to fall back on either the Bio or GM Notes fields for displaying information, or alternatively just add an "appearance" or "character_appearance" Attribute in the Attributes & Abilities tab and place your description there.
 
 ### Details
-NPCIntro will optionally display all of the appearance-related details from the sheet that it can find: Eyes, skin, hair, height, weight, gender, and race. For monsters, it displays the size and type of the monster. If you turn details off in the config menu, this information will not be shown.
+NPCIntro will optionally display all of the appearance-related details from the sheet that it can find: Eyes, skin, hair, height, weight, gender, and race. For monsters, it displays the size and type of the monster.
+
+If using the `--anon` parameter in your command on non-NPC sheets, the race, height, and weight will be replaced with the size. For the NPC sheet, type will be replaced with "creature".
+
+If you turn details off in the config menu, this information will not be shown.
 
 ### Monster Sheets
 You can use NPCIntro on a character/monster using the NPC sheet without falling back on the bio or GM notes. When you send the _show_ command for a NPC sheet, it will tell you there is no description followed by a GM-whispered dialog. Click the "Add Description" button to enter some descriptive text.
